@@ -1,0 +1,348 @@
+---
+const title = 'Astro Practical State Template';
+const tabs = [
+  { id: 'overview', label: '개요', content: '상태를 먼저 정의하고 UI는 결과로만 반영합니다.' },
+  { id: 'review', label: '리뷰', content: '변경 지점을 action 함수로 모으는 실무형 기본 패턴입니다.' },
+  { id: 'faq', label: 'FAQ', content: 'derive, subscribe, cleanup까지 한 파일에서 다룹니다.' }
+];
+---
+
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe5;
+        --surface: #fffdfa;
+        --text: #241c16;
+        --muted: #6f6258;
+        --line: #d8ccbf;
+        --accent: #2d6a54;
+        --accent-strong: #1f4c3c;
+        --accent-soft: #e5f2ec;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, #fff4df 0, transparent 26rem),
+          linear-gradient(180deg, #faf5ee 0%, var(--bg) 100%);
+      }
+
+      main {
+        width: min(100% - 2rem, 54rem);
+        margin: 4rem auto;
+        padding: 2rem;
+        border: 1px solid var(--line);
+        border-radius: 1.5rem;
+        background: var(--surface);
+        box-shadow: 0 1.2rem 3rem rgba(36, 28, 22, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      [data-app] {
+        margin-top: 2rem;
+      }
+
+      [data-tab-list] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      [data-tab-button] {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--text);
+        padding: 0.75rem 1rem;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      [data-tab-button][aria-selected='true'] {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: white;
+      }
+
+      [data-tab-panel] {
+        display: none;
+        padding: 1.25rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: white;
+      }
+
+      [data-tab-panel].is-active {
+        display: block;
+      }
+
+      .meta {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px dashed var(--line);
+        border-radius: 1rem;
+        background: var(--accent-soft);
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .meta-row strong {
+        color: var(--accent-strong);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{title}</h1>
+      <p>
+        최소 입문 패턴보다 한 단계 확장한 실무형 기본 템플릿입니다. 상태는 직접 변경하지 않고,
+        action 함수로만 바꾸며, derive와 subscribe를 같은 파일 안에서 관리합니다.
+      </p>
+
+      <section data-app data-initial-tab="overview" aria-label="탭 예제">
+        <div data-tab-list role="tablist" aria-label="콘텐츠 탭">
+          {tabs.map((tab) => (
+            <button
+              type="button"
+              role="tab"
+              id={`tab-${tab.id}`}
+              data-tab-button
+              data-tab-id={tab.id}
+              aria-selected="false"
+              aria-controls={`panel-${tab.id}`}
+              tabindex="-1"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {tabs.map((tab) => (
+          <section
+            id={`panel-${tab.id}`}
+            role="tabpanel"
+            tabindex="0"
+            data-tab-panel
+            data-tab-id={tab.id}
+            aria-labelledby={`tab-${tab.id}`}
+            aria-hidden="true"
+          >
+            <strong>{tab.label}</strong>
+            <p>{tab.content}</p>
+          </section>
+        ))}
+
+        <div class="meta">
+          <div class="meta-row">
+            <span>현재 탭</span>
+            <strong data-current-tab>overview</strong>
+          </div>
+          <div class="meta-row">
+            <span>활성 패널</span>
+            <strong data-current-panel>panel-overview</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="application/json" id="tabs-data" set:html={JSON.stringify(tabs)}></script>
+
+    <script type="module">
+      import { createStore } from './create-ui-store.js';
+
+      const tabs = JSON.parse(
+        document.querySelector('#tabs-data')?.textContent ?? '[]'
+      );
+      const root = document.querySelector('[data-app]');
+
+      if (!root) {
+        throw new Error('data-app 루트를 찾지 못했습니다.');
+      }
+
+      function getFocusableButtons(buttons) {
+        return buttons.filter(Boolean);
+      }
+
+      const elements = {
+        buttons: Array.from(root.querySelectorAll('[data-tab-button]')),
+        panels: Array.from(root.querySelectorAll('[data-tab-panel]')),
+        currentTab: root.querySelector('[data-current-tab]'),
+        currentPanel: root.querySelector('[data-current-panel]')
+      };
+
+      const store = createStore(
+        {
+          activeTabId: root.dataset.initialTab ?? tabs[0]?.id ?? null
+        },
+        {
+          derive(currentState) {
+            return {
+              activePanelId: currentState.activeTabId
+                ? `panel-${currentState.activeTabId}`
+                : null,
+              activeIndex: tabs.findIndex((tab) => tab.id === currentState.activeTabId)
+            };
+          }
+        }
+      );
+
+      function render({ state, derived }) {
+        elements.buttons.forEach((button) => {
+          const isActive = button.dataset.tabId === state.activeTabId;
+          button.setAttribute('aria-selected', String(isActive));
+          button.tabIndex = isActive ? 0 : -1;
+        });
+
+        elements.panels.forEach((panel) => {
+          const isActive = panel.dataset.tabId === state.activeTabId;
+          panel.classList.toggle('is-active', isActive);
+          panel.setAttribute('aria-hidden', String(!isActive));
+        });
+
+        if (elements.currentTab) {
+          elements.currentTab.textContent = state.activeTabId ?? '-';
+        }
+
+        if (elements.currentPanel) {
+          elements.currentPanel.textContent = derived.activePanelId ?? '-';
+        }
+      }
+
+      const unsubscribeRender = store.subscribe(render, { immediate: true });
+
+      const actions = {
+        setActiveTab(tabId) {
+          store.setState((currentState) => {
+            if (currentState.activeTabId === tabId) {
+              return null;
+            }
+
+            return { activeTabId: tabId };
+          });
+        },
+        moveTab(direction) {
+          const snapshot = store.getSnapshot();
+          const buttons = getFocusableButtons(elements.buttons);
+          const lastIndex = buttons.length - 1;
+
+          if (snapshot.derived.activeIndex < 0 || lastIndex < 0) {
+            return;
+          }
+
+          const nextIndex =
+            direction === 'next'
+              ? (snapshot.derived.activeIndex + 1) % buttons.length
+              : (snapshot.derived.activeIndex - 1 + buttons.length) % buttons.length;
+
+          const nextId = buttons[nextIndex]?.dataset.tabId;
+          if (!nextId) {
+            return;
+          }
+
+          actions.setActiveTab(nextId);
+          buttons[nextIndex].focus();
+        },
+        moveToEdge(edge) {
+          const buttons = getFocusableButtons(elements.buttons);
+          const index = edge === 'start' ? 0 : buttons.length - 1;
+          const nextButton = buttons[index];
+          const nextId = nextButton?.dataset.tabId;
+
+          if (!nextId) {
+            return;
+          }
+
+          actions.setActiveTab(nextId);
+          nextButton.focus();
+        }
+      };
+
+      function handleButtonClick(event) {
+        const button = event.currentTarget;
+        const { tabId } = button.dataset;
+
+        if (!tabId) {
+          return;
+        }
+
+        actions.setActiveTab(tabId);
+      }
+
+      function handleButtonKeydown(event) {
+        switch (event.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+            event.preventDefault();
+            actions.moveTab('next');
+            break;
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            event.preventDefault();
+            actions.moveTab('prev');
+            break;
+          case 'Home':
+            event.preventDefault();
+            actions.moveToEdge('start');
+            break;
+          case 'End':
+            event.preventDefault();
+            actions.moveToEdge('end');
+            break;
+          default:
+            break;
+        }
+      }
+
+      function bindEvents() {
+        elements.buttons.forEach((button) => {
+          button.addEventListener('click', handleButtonClick);
+          button.addEventListener('keydown', handleButtonKeydown);
+        });
+      }
+
+      function destroy() {
+        unsubscribeRender();
+
+        elements.buttons.forEach((button) => {
+          button.removeEventListener('click', handleButtonClick);
+          button.removeEventListener('keydown', handleButtonKeydown);
+        });
+
+        store.destroy();
+      }
+
+      bindEvents();
+
+      window.addEventListener('pagehide', destroy, { once: true });
+    </script>
+  </body>
+</html>

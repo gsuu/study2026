@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tabs Fixture</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #f6f1e8;
+        color: #241f1b;
+      }
+      .page {
+        width: min(100% - 32px, 720px);
+        margin: 48px auto;
+        padding: 24px;
+        border: 1px solid #dacfc2;
+        border-radius: 24px;
+        background: #fffdf8;
+      }
+      .tab-list {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .tab {
+        padding: 12px 16px;
+        border: 1px solid #d2c4b3;
+        border-radius: 999px;
+        background: transparent;
+        cursor: pointer;
+      }
+      .tab.active {
+        background: #c86428;
+        border-color: #c86428;
+        color: #fff;
+      }
+      .panel {
+        display: none;
+        padding: 20px;
+        border: 1px solid #e2d8cd;
+        border-radius: 16px;
+        background: #fff;
+      }
+      .panel.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>탭 예제</h1>
+      <div class="tab-list">
+        <button class="tab active" data-target="panel-overview">개요</button>
+        <button class="tab" data-target="panel-review">리뷰</button>
+        <button class="tab" data-target="panel-faq">FAQ</button>
+      </div>
+
+      <section id="panel-overview" class="panel active">
+        <h2>개요</h2>
+        <p>상태 하나로 버튼과 패널이 같이 움직이는지 확인합니다.</p>
+      </section>
+      <section id="panel-review" class="panel">
+        <h2>리뷰</h2>
+        <p>DOM class가 아니라 activeTabId가 진짜 상태여야 합니다.</p>
+      </section>
+      <section id="panel-faq" class="panel">
+        <h2>FAQ</h2>
+        <p>잘못된 코드와 리팩토링 코드를 번갈아 붙여 비교해보세요.</p>
+      </section>
+    </main>
+
+    <script>
+      const tabs = [...document.querySelectorAll('.tab')];
+      const panels = [...document.querySelectorAll('.panel')];
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelector('.tab.active')?.classList.remove('active');
+          tab.classList.add('active');
+
+          document.querySelector('.panel.active')?.classList.remove('active');
+          document.getElementById(tab.dataset.target)?.classList.add('active');
+        });
+      });
+    </script>
+  </body>
+</html>

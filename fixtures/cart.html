@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cart Fixture</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #f3f5f7;
+        color: #1c232a;
+      }
+      .page {
+        width: min(100% - 32px, 760px);
+        margin: 48px auto;
+        padding: 24px;
+        border: 1px solid #d8e0e8;
+        border-radius: 24px;
+        background: #fff;
+      }
+      .cart-item + .cart-item {
+        margin-top: 12px;
+      }
+      .cart-item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid #dce4eb;
+        border-radius: 16px;
+      }
+      .qty-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .minus,
+      .plus {
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 10px;
+        background: #244c74;
+        color: #fff;
+        cursor: pointer;
+      }
+      .summary {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #dce4eb;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>장바구니 예제</h1>
+
+      <article class="cart-item" data-id="item-1" data-unit-price="12000" data-quantity="1">
+        <div>Astro 상태관리 노트</div>
+        <div class="qty-box">
+          <button class="minus">-</button>
+          <span class="quantity">1</span>
+          <button class="plus">+</button>
+        </div>
+        <strong class="price">12000</strong>
+      </article>
+
+      <article class="cart-item" data-id="item-2" data-unit-price="8000" data-quantity="2">
+        <div>리팩토링 체크리스트</div>
+        <div class="qty-box">
+          <button class="minus">-</button>
+          <span class="quantity">2</span>
+          <button class="plus">+</button>
+        </div>
+        <strong class="price">16000</strong>
+      </article>
+
+      <p class="summary">총 가격: <span class="cart-total">28000</span></p>
+    </main>
+
+    <script>
+      const cartRows = [...document.querySelectorAll('.cart-item')];
+      const totalNode = document.querySelector('.cart-total');
+
+      cartRows.forEach(item => {
+        const minus = item.querySelector('.minus');
+        const plus = item.querySelector('.plus');
+        const qty = item.querySelector('.quantity');
+        const price = item.querySelector('.price');
+
+        minus?.addEventListener('click', () => {
+          const value = Number(qty.textContent);
+
+          if (value > 1) {
+            qty.textContent = value - 1;
+            price.textContent = Number(item.dataset.unitPrice) * (value - 1);
+          }
+
+          updateTotal();
+        });
+
+        plus?.addEventListener('click', () => {
+          const value = Number(qty.textContent);
+
+          qty.textContent = value + 1;
+          price.textContent = Number(item.dataset.unitPrice) * (value + 1);
+          updateTotal();
+        });
+      });
+
+      function updateTotal() {
+        let total = 0;
+
+        document.querySelectorAll('.cart-item .price').forEach(price => {
+          total += Number(price.textContent);
+        });
+
+        document.querySelector('.cart-total').textContent = total;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,230 @@
+---
+const title = 'Astro Practical Modal Template';
+---
+
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --surface: #fffdfa;
+        --text: #231b16;
+        --muted: #6e6258;
+        --line: #d8cdc0;
+        --accent: #8f3f2c;
+        --accent-strong: #6f2f1f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, #fff4df 0, transparent 26rem),
+          linear-gradient(180deg, #faf5ee 0%, var(--bg) 100%);
+      }
+
+      body.is-scroll-locked {
+        overflow: hidden;
+      }
+
+      main {
+        width: min(100% - 2rem, 52rem);
+        margin: 4rem auto;
+        padding: 2rem;
+        border: 1px solid var(--line);
+        border-radius: 1.5rem;
+        background: var(--surface);
+        box-shadow: 0 1.2rem 3rem rgba(35, 27, 22, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .actions {
+        margin-top: 1.5rem;
+      }
+
+      .open-button,
+      .close-button {
+        padding: 0.85rem 1rem;
+        border: 0;
+        border-radius: 0.9rem;
+        background: var(--accent);
+        color: white;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .meta {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px dashed var(--line);
+        border-radius: 1rem;
+        background: #fff7f3;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+      }
+
+      .modal.is-open {
+        display: block;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(30, 22, 18, 0.55);
+      }
+
+      .dialog {
+        position: relative;
+        width: min(100% - 2rem, 28rem);
+        margin: 12vh auto 0;
+        padding: 1.5rem;
+        border-radius: 1.25rem;
+        background: white;
+        z-index: 1;
+      }
+
+      .dialog h2 {
+        margin: 0 0 0.75rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main data-app>
+      <h1>{title}</h1>
+      <p>
+        모달 예제는 `isOpen` 하나로 상태를 관리하고, body 스크롤 잠금과 표시 상태를 render에서만 반영합니다.
+      </p>
+
+      <div class="actions">
+        <button type="button" class="open-button" data-open-button>모달 열기</button>
+      </div>
+
+      <div class="meta">
+        현재 상태: <strong data-open-state>false</strong>
+      </div>
+    </main>
+
+    <section class="modal" data-modal aria-hidden="true">
+      <div class="overlay" data-overlay></div>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <h2 id="modal-title">상태 중심 모달</h2>
+        <p>
+          열기, 닫기, 오버레이 클릭, ESC를 모두 같은 상태 흐름으로 묶습니다.
+        </p>
+        <div class="actions">
+          <button type="button" class="close-button" data-close-button>닫기</button>
+        </div>
+      </div>
+    </section>
+
+    <script type="module">
+      import { createStore } from './create-ui-store.js';
+
+      const elements = {
+        openButton: document.querySelector('[data-open-button]'),
+        closeButton: document.querySelector('[data-close-button]'),
+        overlay: document.querySelector('[data-overlay]'),
+        modal: document.querySelector('[data-modal]'),
+        openState: document.querySelector('[data-open-state]')
+      };
+
+      const store = createStore(
+        {
+          isOpen: false
+        },
+        {
+          derive(state) {
+            return {
+              bodyClassName: state.isOpen ? 'is-scroll-locked' : ''
+            };
+          }
+        }
+      );
+
+      function render({ state, derived }) {
+        elements.modal?.classList.toggle('is-open', state.isOpen);
+        elements.modal?.setAttribute('aria-hidden', String(!state.isOpen));
+
+        document.body.classList.toggle('is-scroll-locked', Boolean(derived.bodyClassName));
+
+        if (elements.openState) {
+          elements.openState.textContent = String(state.isOpen);
+        }
+      }
+
+      const unsubscribeRender = store.subscribe(render, { immediate: true });
+
+      const actions = {
+        openModal() {
+          store.setState((state) => {
+            if (state.isOpen) {
+              return null;
+            }
+
+            return { isOpen: true };
+          });
+        },
+        closeModal() {
+          store.setState((state) => {
+            if (!state.isOpen) {
+              return null;
+            }
+
+            return { isOpen: false };
+          });
+        }
+      };
+
+      function handleKeydown(event) {
+        if (event.key === 'Escape' && store.getState().isOpen) {
+          actions.closeModal();
+        }
+      }
+
+      function bindEvents() {
+        elements.openButton?.addEventListener('click', actions.openModal);
+        elements.closeButton?.addEventListener('click', actions.closeModal);
+        elements.overlay?.addEventListener('click', actions.closeModal);
+        document.addEventListener('keydown', handleKeydown);
+      }
+
+      function destroy() {
+        unsubscribeRender();
+
+        elements.openButton?.removeEventListener('click', actions.openModal);
+        elements.closeButton?.removeEventListener('click', actions.closeModal);
+        elements.overlay?.removeEventListener('click', actions.closeModal);
+        document.removeEventListener('keydown', handleKeydown);
+
+        document.body.classList.remove('is-scroll-locked');
+        store.destroy();
+      }
+
+      bindEvents();
+      window.addEventListener('pagehide', destroy, { once: true });
+    </script>
+  </body>
+</html>

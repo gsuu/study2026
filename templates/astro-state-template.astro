@@ -1,0 +1,247 @@
+---
+const title = 'Astro State Template';
+const tabs = [
+  { id: 'overview', label: '개요', content: '개요 내용입니다.' },
+  { id: 'review', label: '리뷰', content: '리뷰 내용입니다.' },
+  { id: 'faq', label: 'FAQ', content: '자주 묻는 질문입니다.' }
+];
+---
+
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f1e8;
+        --surface: #fffdf8;
+        --text: #1f1a17;
+        --muted: #6a5f57;
+        --line: #d9cdbf;
+        --accent: #c46a2d;
+        --accent-strong: #9e4f1a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, #fff4df 0, transparent 28rem),
+          linear-gradient(180deg, #f8f4ec 0%, var(--bg) 100%);
+      }
+
+      main {
+        width: min(100% - 2rem, 52rem);
+        margin: 4rem auto;
+        padding: 2rem;
+        border: 1px solid var(--line);
+        border-radius: 1.5rem;
+        background: color-mix(in srgb, var(--surface) 90%, white 10%);
+        box-shadow: 0 1rem 3rem rgba(31, 26, 23, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      [data-tabs] {
+        margin-top: 2rem;
+      }
+
+      [data-tab-list] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      [data-tab-button] {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--text);
+        padding: 0.75rem 1rem;
+        font: inherit;
+        cursor: pointer;
+        transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+      }
+
+      [data-tab-button][aria-selected='true'] {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: white;
+      }
+
+      [data-tab-panel] {
+        margin-top: 1rem;
+        padding: 1.25rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.75);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .template-notes {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px dashed var(--line);
+      }
+
+      .template-notes strong {
+        color: var(--accent-strong);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{title}</h1>
+      <p>
+        목적은 DOM을 직접 맞추는 것이 아니라, 상태를 바꾸고 render가 UI를 반영하도록 강제하는 것입니다.
+      </p>
+
+      <section data-tabs data-initial-tab="overview" aria-label="탭 예제">
+        <div data-tab-list role="tablist" aria-label="콘텐츠 탭">
+          {tabs.map((tab) => (
+            <button
+              type="button"
+              role="tab"
+              id={`tab-${tab.id}`}
+              data-tab-button
+              data-tab-id={tab.id}
+              aria-selected="false"
+              aria-controls={`panel-${tab.id}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {tabs.map((tab) => (
+          <section
+            id={`panel-${tab.id}`}
+            role="tabpanel"
+            tabindex="0"
+            data-tab-panel
+            data-tab-id={tab.id}
+            aria-labelledby={`tab-${tab.id}`}
+            hidden
+          >
+            <strong>{tab.label}</strong>
+            <p>{tab.content}</p>
+          </section>
+        ))}
+      </section>
+
+      <div class="template-notes">
+        <p><strong>확장 지점</strong>: state 필드 추가, derived 계산, action 함수 분리, subscribe 도입</p>
+      </div>
+    </main>
+
+    <script type="application/json" id="tabs-data" set:html={JSON.stringify(tabs)}></script>
+
+    <script type="module">
+      import { createStore } from './create-ui-store.js';
+
+      const tabs = JSON.parse(
+        document.querySelector('#tabs-data')?.textContent ?? '[]'
+      );
+      const root = document.querySelector('[data-tabs]');
+
+      if (!root) {
+        throw new Error('data-tabs 루트를 찾지 못했습니다.');
+      }
+
+      const elements = {
+        buttons: Array.from(root.querySelectorAll('[data-tab-button]')),
+        panels: Array.from(root.querySelectorAll('[data-tab-panel]'))
+      };
+
+      const store = createStore(
+        {
+          activeTab: root.dataset.initialTab ?? tabs[0]?.id ?? null
+        },
+        {
+          derive(state) {
+            return {
+              hasActiveTab: state.activeTab !== null,
+              activePanelId: state.activeTab ? `panel-${state.activeTab}` : null
+            };
+          }
+        }
+      );
+
+      function render({ state, derived }) {
+        const activeTab = state.activeTab;
+
+        elements.buttons.forEach((button) => {
+          const isActive = button.dataset.tabId === activeTab;
+          button.setAttribute('aria-selected', String(isActive));
+          button.tabIndex = isActive ? 0 : -1;
+        });
+
+        elements.panels.forEach((panel) => {
+          const isActive = panel.dataset.tabId === activeTab;
+          panel.hidden = !isActive;
+        });
+
+        root.dataset.hasActiveTab = String(derived.hasActiveTab);
+        if (derived.activePanelId) {
+          root.dataset.activePanelId = derived.activePanelId;
+        } else {
+          delete root.dataset.activePanelId;
+        }
+      }
+
+      const unsubscribeRender = store.subscribe(render, { immediate: true });
+
+      const actions = {
+        setActiveTab(tabId) {
+          store.setState((state) => {
+            if (state.activeTab === tabId) {
+              return null;
+            }
+
+            return { activeTab: tabId };
+          });
+        }
+      };
+
+      function bindEvents() {
+        elements.buttons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const { tabId } = button.dataset;
+            if (!tabId) {
+              return;
+            }
+
+            actions.setActiveTab(tabId);
+          });
+        });
+      }
+
+      function destroy() {
+        unsubscribeRender();
+        store.destroy();
+      }
+
+      bindEvents();
+      window.addEventListener('pagehide', destroy, { once: true });
+    </script>
+  </body>
+</html>

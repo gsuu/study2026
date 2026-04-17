@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accordion Fixture</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #f2f4f0;
+        color: #1d241d;
+      }
+      .page {
+        width: min(100% - 32px, 720px);
+        margin: 48px auto;
+        padding: 24px;
+        border: 1px solid #d7ddd3;
+        border-radius: 24px;
+        background: #fbfdf9;
+      }
+      .accordion-item + .accordion-item {
+        margin-top: 12px;
+      }
+      .accordion-item {
+        border: 1px solid #d8e0d2;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .accordion-button {
+        width: 100%;
+        padding: 16px 18px;
+        border: 0;
+        background: #eef4e7;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+      }
+      .accordion-item.open .accordion-button {
+        background: #dcebcf;
+      }
+      .accordion-panel {
+        display: none;
+        padding: 18px;
+      }
+      .accordion-panel.open {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>아코디언 예제</h1>
+
+      <article class="accordion-item" data-id="a1">
+        <button class="accordion-button">상태는 무엇인가?</button>
+        <div class="accordion-panel">열림 여부를 DOM class가 아니라 상태로 봐야 합니다.</div>
+      </article>
+
+      <article class="accordion-item" data-id="a2">
+        <button class="accordion-button">single과 multi의 차이</button>
+        <div class="accordion-panel">openItemId와 openItemIds는 구조가 다릅니다.</div>
+      </article>
+
+      <article class="accordion-item" data-id="a3">
+        <button class="accordion-button">리팩토링 포인트</button>
+        <div class="accordion-panel">DOM을 읽어 판단하지 말고 상태를 먼저 정의합니다.</div>
+      </article>
+    </main>
+
+    <script>
+      const accordionItems = [...document.querySelectorAll('.accordion-item')];
+
+      accordionItems.forEach(item => {
+        const button = item.querySelector('.accordion-button');
+
+        button?.addEventListener('click', () => {
+          const panel = item.querySelector('.accordion-panel');
+
+          if (item.classList.contains('open')) {
+            item.classList.remove('open');
+            panel.style.display = 'none';
+          } else {
+            item.classList.add('open');
+            panel.style.display = 'block';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

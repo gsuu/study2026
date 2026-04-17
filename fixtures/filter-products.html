@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Filter Products Fixture</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #f4f2eb;
+        color: #22201a;
+      }
+      .page {
+        width: min(100% - 32px, 880px);
+        margin: 48px auto;
+        padding: 24px;
+        border: 1px solid #ddd5c8;
+        border-radius: 24px;
+        background: #fffdf9;
+      }
+      .filter-list {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .filter-button {
+        padding: 10px 14px;
+        border: 1px solid #d1c5b3;
+        border-radius: 999px;
+        background: transparent;
+        cursor: pointer;
+        font: inherit;
+      }
+      .filter-button.active {
+        background: #546a3b;
+        border-color: #546a3b;
+        color: #fff;
+      }
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+      }
+      .product-item {
+        padding: 16px;
+        border: 1px solid #e1d9cd;
+        border-radius: 16px;
+        background: #fff;
+      }
+      .product-item.is-hidden {
+        display: none;
+      }
+      .meta {
+        margin-bottom: 16px;
+        color: #746a5d;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>필터 상품 목록 예제</h1>
+      <p class="meta">현재 결과 수: <strong class="product-count">4</strong></p>
+
+      <div class="filter-list">
+        <button class="filter-button active" data-category="all">전체</button>
+        <button class="filter-button" data-category="book">도서</button>
+        <button class="filter-button" data-category="tool">도구</button>
+      </div>
+
+      <section class="product-grid">
+        <article class="product-item" data-category="book">상태관리 입문</article>
+        <article class="product-item" data-category="tool">개발자 노트</article>
+        <article class="product-item" data-category="book">Astro 실습서</article>
+        <article class="product-item" data-category="tool">키보드 브러시</article>
+      </section>
+    </main>
+
+    <script>
+      const filterButtons = [...document.querySelectorAll('.filter-button')];
+      const productItems = [...document.querySelectorAll('.product-item')];
+      const countNode = document.querySelector('.product-count');
+
+      filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          document.querySelectorAll('.filter-button').forEach(item => {
+            item.classList.remove('active');
+          });
+
+          button.classList.add('active');
+
+          const category = button.dataset.category;
+
+          document.querySelectorAll('.product-item').forEach(item => {
+            if (category === 'all') {
+              item.style.display = 'block';
+            } else if (item.dataset.category === category) {
+              item.style.display = 'block';
+            } else {
+              item.style.display = 'none';
+            }
+          });
+
+          document.querySelector('.product-count').textContent =
+            document.querySelectorAll('.product-item:not([style*="none"])').length;
+        });
+      });
+    </script>
+  </body>
+</html>
